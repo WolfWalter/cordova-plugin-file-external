@@ -1,12 +1,11 @@
 {
-  "name": "cordova-plugin-template",
+  "name": "cordova-plugin-file-extra",
   "version": "1.0.0",
   "cordova": {
-    "id": "cordova-plugin-template",
+    "id": "cordova-plugin-file-extra",
     "platforms": [
-      "android",
-      "ios",
+      "android"
     ]
   },
-  "description": "A starting point for a Cordova Plugin"
+  "description": "Add file functions for Android, missing in the file plugin."
 }

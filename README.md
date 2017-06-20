@@ -1,4 +1,4 @@
-Cordova Plugin Template
+Cordova Plugin File Extra
 ======
 
-This is a simple starting point for building a Cordova plugin on iOS and Android.
+Add file functions for Android, missing in the file plugin.
