@@ -4,8 +4,10 @@ var exec = require('cordova/exec');
 var PLUGIN_NAME = 'FileExtra';
 
 var FileExtra = {
-  dirChooser: function(cb) {
-    exec(cb, null, PLUGIN_NAME, 'dirChooser', []);
+  dirChooser: function(){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'dirChooser', []);
+    });
   }
 };
 

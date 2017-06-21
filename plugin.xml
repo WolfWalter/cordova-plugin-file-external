@@ -24,6 +24,8 @@
       </config-file>
 
       <source-file src="src/android/FileExtra.java" target-dir="src/de/solvis/" />
+
+      <dependency id="es6-promise-plugin" url="https://github.com/vstirbu/PromisesPlugin.git"></dependency>
     </platform>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
