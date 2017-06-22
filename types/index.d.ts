@@ -8,6 +8,7 @@ interface Entry {
 interface Window {
   FileExternal: {
     dirChooser:() => Promise<string>;
-    listDir:(path: string, dir: string) => Promise<Array<Entry>>;
+    listDir:(rootUri: string, dir: string) => Promise<Array<Entry>>;
+    readFile:(rootUri: string, file: string) => Promise<string>;
   }
 }

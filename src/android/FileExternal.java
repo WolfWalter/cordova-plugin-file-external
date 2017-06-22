@@ -3,6 +3,7 @@
 package de.solvis;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.provider.DocumentFile;
@@ -17,7 +18,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class FileExternal extends CordovaPlugin {
   private static final String TAG = "FileExternal";
@@ -68,6 +72,23 @@ public class FileExternal extends CordovaPlugin {
 
       result = true;
     }
+    else if(action.equals("readFile")) {
+      final DocumentFile file = getFile(args.getString(0), args.getString(1));
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            String content = readFile(file);
+            callback.success(content);
+          } catch (IOException e) {
+            callback.error(e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      });
+
+      result = true;
+    }
 
     return result;
   }
@@ -109,6 +130,30 @@ public class FileExternal extends CordovaPlugin {
     }
 
     return filesDataJson;
+  }
+
+  private String readFile(DocumentFile file) throws IOException{
+    if(file == null || !file.exists()){
+      Log.i(TAG, "sourceDir does not exist");
+      throw new IOException("not found");
+    }
+    if(!file.isFile()){
+      Log.i(TAG, "not a file");
+      throw new IOException("not a file");
+    }
+    Log.i(TAG, "read file: " + file.getName());
+
+    ContentResolver contentResolver = cordova.getActivity().getContentResolver();
+    InputStream is = contentResolver.openInputStream(file.getUri());
+
+    BufferedReader r = new BufferedReader(new InputStreamReader(is));
+    StringBuilder content = new StringBuilder();
+    String line;
+    while ((line = r.readLine()) != null) {
+      content.append(line).append('\n');
+    }
+
+    return content.toString();
   }
 
   @Override
