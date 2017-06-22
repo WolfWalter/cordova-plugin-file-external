@@ -15,15 +15,15 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-public class FileExtra extends CordovaPlugin {
-  private static final String TAG = "FileExtra";
+public class FileExternal extends CordovaPlugin {
+  private static final String TAG = "FileExternal";
   private static final int ACTION_GET_FILES = 56;
   private CallbackContext callback;
 
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
 
-    Log.d(TAG, "Initializing FileExtra");
+    Log.d(TAG, "Initializing FileExternal");
   }
 
   public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {

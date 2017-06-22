@@ -1,11 +1,11 @@
 {
-  "name": "cordova-plugin-file-extra",
+  "name": "cordova-plugin-file-external",
   "version": "1.0.0",
   "cordova": {
-    "id": "cordova-plugin-file-extra",
+    "id": "cordova-plugin-file-external",
     "platforms": [
       "android"
     ]
   },
-  "description": "Add file functions for Android, missing in the file plugin."
+  "description": "Plugin to work with external files like on an external sd-card conneted over USB-OTG."
 }

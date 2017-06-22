@@ -1,9 +1,9 @@
 
 var exec = require('cordova/exec');
 
-var PLUGIN_NAME = 'FileExtra';
+var PLUGIN_NAME = 'FileExternal';
 
-var FileExtra = {
+var FileExternal = {
   dirChooser: function(){
     return new Promise(function(resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, 'dirChooser', []);
@@ -11,4 +11,4 @@ var FileExtra = {
   }
 };
 
-module.exports = FileExtra;
+module.exports = FileExternal;
