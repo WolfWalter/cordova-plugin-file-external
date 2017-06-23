@@ -22,6 +22,11 @@ var FileExternal = {
     return new Promise(function(resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, 'copyAssetsToExternal', [assetsPath, extRootUri, extPath]);
     });
+  },
+  remove: function(extRootUri, extPath){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'remove', [extRootUri, extPath]);
+    });
   }
 };
 
