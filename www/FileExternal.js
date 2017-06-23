@@ -18,14 +18,19 @@ var FileExternal = {
       exec(resolve, reject, PLUGIN_NAME, 'readFile', [extRootUri, file]);
     });
   },
-  copyAssetsToExternal: function(assetsPath, extRootUri, extPath){
-    return new Promise(function(resolve, reject) {
-      exec(resolve, reject, PLUGIN_NAME, 'copyAssetsToExternal', [assetsPath, extRootUri, extPath]);
-    });
-  },
   remove: function(extRootUri, extPath){
     return new Promise(function(resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, 'remove', [extRootUri, extPath]);
+    });
+  },
+  createDir: function(extRootUri, extPath, dir){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'createDir', [extRootUri, extPath, dir]);
+    });
+  },
+  copyAssetsToExternal: function(assetsPath, extRootUri, extPath){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'copyAssetsToExternal', [assetsPath, extRootUri, extPath]);
     });
   }
 };

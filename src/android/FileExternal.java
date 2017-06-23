@@ -89,23 +89,6 @@ public class FileExternal extends CordovaPlugin {
       });
       result = true;
     }
-    else if(action.equals("copyAssetsToExternal")) {
-      final String assetPath = args.getString(0);
-      final DocumentFile extTarget = getFile(args.getString(1), args.getString(2));
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-        try {
-          copyAssetsToExternal(assetPath, extTarget);
-          callback.success();
-        } catch (IOException e) {
-          callback.error(e.getMessage());
-          e.printStackTrace();
-        }
-        }
-      });
-      result = true;
-    }
     else if(action.equals("remove")) {
       final DocumentFile entry = getFile(args.getString(0), args.getString(1));
       cordova.getThreadPool().execute(new Runnable() {
@@ -113,6 +96,40 @@ public class FileExternal extends CordovaPlugin {
         public void run() {
           try {
             remove(entry);
+            callback.success();
+          } catch (IOException e) {
+            callback.error(e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      });
+      result = true;
+    }
+    else if(action.equals("createDir")) {
+      final DocumentFile entry = getFile(args.getString(0), args.getString(1));
+      final String dirName = args.getString(2);
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            createDir(entry, dirName);
+            callback.success();
+          } catch (IOException e) {
+            callback.error(e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      });
+      result = true;
+    }
+    else if(action.equals("copyAssetsToExternal")) {
+      final String assetPath = args.getString(0);
+      final DocumentFile extTarget = getFile(args.getString(1), args.getString(2));
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            copyAssetsToExternal(assetPath, extTarget);
             callback.success();
           } catch (IOException e) {
             callback.error(e.getMessage());
@@ -134,7 +151,7 @@ public class FileExternal extends CordovaPlugin {
   private DocumentFile getFile(String path, String subDir) {
     DocumentFile resultDir;
     DocumentFile pathDir = DocumentFile.fromTreeUri(
-            cordova.getActivity().getApplicationContext(), Uri.parse(path));
+        cordova.getActivity().getApplicationContext(), Uri.parse(path));
     resultDir = (subDir.equals(""))? pathDir: pathDir.findFile(subDir);
 
     return resultDir;
@@ -214,6 +231,15 @@ public class FileExternal extends CordovaPlugin {
     entry.delete();
   }
 
+  private void createDir(DocumentFile path, String dirName) throws IOException {
+    if(path == null || !path.exists()){
+      Log.i(TAG, "path does not exist");
+      throw new IOException("not found");
+    }
+
+    path.createDirectory(dirName);
+  }
+
   private void copyAssetsToExternal(String assetPath, DocumentFile target) throws IOException{
     if(target == null || !target.exists()){
       Log.i(TAG, "target does not exist");
@@ -257,17 +283,17 @@ public class FileExternal extends CordovaPlugin {
     FileExternal.copyInputToOutputStream(is, os);
   }
 
-   private static void copyInputToOutputStream(InputStream is, OutputStream os) throws IOException {
-     byte[] buffer = new byte[1024*32];
-     int bytesRead;
+  private static void copyInputToOutputStream(InputStream is, OutputStream os) throws IOException {
+    byte[] buffer = new byte[1024*32];
+    int bytesRead;
 
-     while ((bytesRead = is.read(buffer)) != -1) {
-       os.write(buffer, 0, bytesRead);
-     }
+    while ((bytesRead = is.read(buffer)) != -1) {
+      os.write(buffer, 0, bytesRead);
+    }
 
-     os.flush();
-     is.close();
-     os.close();
-   }
+    os.flush();
+    is.close();
+    os.close();
+  }
 
 }
