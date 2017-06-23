@@ -8,17 +8,21 @@ var FileExternal = {
       exec(resolve, reject, PLUGIN_NAME, 'dirChooser', []);
     });
   },
-  listDir: function(rootUri, dir){
+  listDir: function(extRootUri, dir){
     return new Promise(function(resolve, reject) {
-      exec(resolve, reject, PLUGIN_NAME, 'listDir', [rootUri, dir]);
+      exec(resolve, reject, PLUGIN_NAME, 'listDir', [extRootUri, dir]);
     });
   },
-  readFile: function(rootUri, file){
+  readFile: function(extRootUri, file){
     return new Promise(function(resolve, reject) {
-      exec(resolve, reject, PLUGIN_NAME, 'readFile', [rootUri, file]);
+      exec(resolve, reject, PLUGIN_NAME, 'readFile', [extRootUri, file]);
     });
   },
-
+  copyAssetsToExternal: function(assetsPath, extRootUri, extPath){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'copyAssetsToExternal', [assetsPath, extRootUri, extPath]);
+    });
+  }
 };
 
 module.exports = FileExternal;

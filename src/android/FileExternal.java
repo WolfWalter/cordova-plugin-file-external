@@ -5,6 +5,7 @@ package de.solvis;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.net.Uri;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
@@ -19,9 +20,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 public class FileExternal extends CordovaPlugin {
   private static final String TAG = "FileExternal";
@@ -49,7 +52,6 @@ public class FileExternal extends CordovaPlugin {
           openDirChooser();
         }
       });
-
       result = true;
     }
     else if(action.equals("listDir")) {
@@ -69,7 +71,6 @@ public class FileExternal extends CordovaPlugin {
           }
         }
       });
-
       result = true;
     }
     else if(action.equals("readFile")) {
@@ -86,7 +87,23 @@ public class FileExternal extends CordovaPlugin {
           }
         }
       });
-
+      result = true;
+    }
+    else if(action.equals("copyAssetsToExternal")) {
+      final String assetPath = args.getString(0);
+      final DocumentFile extTarget = getFile(args.getString(1), args.getString(2));
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+        try {
+          copyAssetsToExternal(assetPath, extTarget);
+          callback.success();
+        } catch (IOException e) {
+          callback.error(e.getMessage());
+          e.printStackTrace();
+        }
+        }
+      });
       result = true;
     }
 
@@ -143,8 +160,8 @@ public class FileExternal extends CordovaPlugin {
     }
     Log.i(TAG, "read file: " + file.getName());
 
-    ContentResolver contentResolver = cordova.getActivity().getContentResolver();
-    InputStream is = contentResolver.openInputStream(file.getUri());
+    ContentResolver ctx = cordova.getActivity().getContentResolver();
+    InputStream is = ctx.openInputStream(file.getUri());
 
     BufferedReader r = new BufferedReader(new InputStreamReader(is));
     StringBuilder content = new StringBuilder();
@@ -170,5 +187,62 @@ public class FileExternal extends CordovaPlugin {
       callback.success(externalFile.getUri().toString());
     }
   }
+
+  private void copyAssetsToExternal(String assetPath, DocumentFile target) throws IOException{
+    if(target == null || !target.exists()){
+      Log.i(TAG, "target does not exist");
+      throw new IOException("not found");
+    }
+
+    Log.i(TAG, "copy assets in " + assetPath + " to " + target.getName());
+
+    ContentResolver ctx = cordova.getActivity().getContentResolver();
+    AssetManager asm = cordova.getActivity().getAssets();
+
+
+    FileExternal.copyAssets(ctx, asm, assetPath, target);
+  }
+
+  private static void copyAssets(ContentResolver ctx, AssetManager asm, String assetPath, DocumentFile target) throws IOException {
+    String[] assets = asm.list(assetPath);
+
+    if(assets.length == 0){
+      FileExternal.copyAssetFile(ctx, asm, assetPath, target);
+    }
+    else{
+      String dirName = new File(assetPath).getName();
+      DocumentFile subDir = target.createDirectory(dirName);
+
+      for (String asset : assets) {
+        FileExternal.copyAssets(ctx, asm, assetPath + "/" + asset, subDir);
+      }
+
+    }
+  }
+
+  private static void copyAssetFile(ContentResolver ctx, AssetManager asm,String assetPath, DocumentFile target) throws IOException {
+    String fileName = new File(assetPath).getName();
+    InputStream is = asm.open(assetPath);
+
+    DocumentFile targetFile = target.createFile(null, fileName);
+    OutputStream os = ctx.openOutputStream(targetFile.getUri());
+
+    Log.i(TAG, "copy assets file " + assetPath + " to " + target.getUri().toString());
+
+    FileExternal.copyInputToOutputStream(is, os);
+  }
+
+   private static void copyInputToOutputStream(InputStream is, OutputStream os) throws IOException {
+     byte[] buffer = new byte[1024*32];
+     int bytesRead;
+
+     while ((bytesRead = is.read(buffer)) != -1) {
+       os.write(buffer, 0, bytesRead);
+     }
+
+     os.flush();
+     is.close();
+     os.close();
+   }
 
 }
