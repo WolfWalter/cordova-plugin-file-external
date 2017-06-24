@@ -5,7 +5,7 @@
     version="1.0.0">
     <name>FileExternal</name>
     <description></description>
-    <license>MIT</license>
+    <license>Apache 2.0</license>
     <keywords></keywords>
 
     <platform name="android">
