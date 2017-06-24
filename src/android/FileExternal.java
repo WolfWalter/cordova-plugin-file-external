@@ -20,11 +20,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class FileExternal extends CordovaPlugin {
   private static final String TAG = "FileExternal";
@@ -113,6 +115,24 @@ public class FileExternal extends CordovaPlugin {
         public void run() {
           try {
             createDir(entry, dirName);
+            callback.success();
+          } catch (IOException e) {
+            callback.error(e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      });
+      result = true;
+    }
+    else if(action.equals("writeFile")) {
+      final DocumentFile target = getFile(args.getString(0), args.getString(1));
+      final String fileName = args.getString(2);
+      final String data = args.getString(3);
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            writeFile(target, fileName, data);
             callback.success();
           } catch (IOException e) {
             callback.error(e.getMessage());
@@ -238,6 +258,23 @@ public class FileExternal extends CordovaPlugin {
     }
 
     path.createDirectory(dirName);
+  }
+
+  private void writeFile(DocumentFile target, String fileName, String data) throws IOException {
+    if(target == null || !target.exists()){
+      Log.i(TAG, "target dir does not exist");
+      throw new IOException("not found");
+    }
+
+    Log.i(TAG, "write file " + fileName);
+
+    InputStream is = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+
+    ContentResolver ctx = cordova.getActivity().getContentResolver();
+    DocumentFile file = target.createFile(null, fileName);
+    OutputStream os = ctx.openOutputStream(file.getUri());
+
+    FileExternal.copyInputToOutputStream(is, os);
   }
 
   private void copyAssetsToExternal(String assetPath, DocumentFile target) throws IOException{

@@ -28,6 +28,11 @@ var FileExternal = {
       exec(resolve, reject, PLUGIN_NAME, 'createDir', [extRootUri, extPath, dir]);
     });
   },
+  writeFile: function(extRootUri, extPath, file, data){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'writeFile', [extRootUri, extPath, file, data]);
+    });
+  },
   copyAssetsToExternal: function(assetsPath, extRootUri, extPath){
     return new Promise(function(resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, 'copyAssetsToExternal', [assetsPath, extRootUri, extPath]);
