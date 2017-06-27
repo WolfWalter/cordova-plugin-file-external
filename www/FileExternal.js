@@ -8,14 +8,14 @@ var FileExternal = {
       exec(resolve, reject, PLUGIN_NAME, 'dirChooser', []);
     });
   },
-  listDir: function(extRootUri, dir){
+  listDir: function(extRootUri, extPath){
     return new Promise(function(resolve, reject) {
-      exec(resolve, reject, PLUGIN_NAME, 'listDir', [extRootUri, dir]);
+      exec(resolve, reject, PLUGIN_NAME, 'listDir', [extRootUri, extPath]);
     });
   },
-  readFile: function(extRootUri, file){
+  readFile: function(extRootUri, extFilePath){
     return new Promise(function(resolve, reject) {
-      exec(resolve, reject, PLUGIN_NAME, 'readFile', [extRootUri, file]);
+      exec(resolve, reject, PLUGIN_NAME, 'readFile', [extRootUri, extFilePath]);
     });
   },
   remove: function(extRootUri, extPath){

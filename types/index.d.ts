@@ -1,5 +1,5 @@
-interface Entry {
-  path: string;
+interface ExtFileEntry {
+  extPath: string;
   name: string;
   isFile: boolean;
   modificationDate: number;
@@ -8,8 +8,8 @@ interface Entry {
 interface Window {
   FileExternal: {
     dirChooser:() => Promise<string>;
-    listDir:(extRootUri: string, dir: string) => Promise<Array<Entry>>;
-    readFile:(extRootUri: string, file: string) => Promise<string>;
+    listDir:(extRootUri: string, extPath: string) => Promise<Array<ExtFileEntry>>;
+    readFile:(extRootUri: string, extFilePath: string) => Promise<string>;
     remove: (extRootUri: string, extPath: string) => Promise<void>;
     createDir: (extRootUri: string, extPath: string, dir: string) => Promise<void>;
     writeFile: (extRootUri: string, extPath: string, file: string, data: string) => Promise<void>;

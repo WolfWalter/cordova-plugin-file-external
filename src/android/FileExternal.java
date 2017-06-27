@@ -28,10 +28,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+import static android.R.attr.path;
+
+class FileExternalEntry {
+  public DocumentFile fileEntry;
+  public String rootUri;
+  public String extPath;
+};
+
 public class FileExternal extends CordovaPlugin {
   private static final String TAG = "FileExternal";
   private static final int ACTION_GET_FILES = 56;
-  private CallbackContext callback;
+  private CallbackContext _callbackContext;
 
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
@@ -45,7 +53,7 @@ public class FileExternal extends CordovaPlugin {
     PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
     pluginResult.setKeepCallback(true);
     callbackContext.sendPluginResult(pluginResult);
-    callback = callbackContext;
+    _callbackContext = callbackContext; // only used for onActivityResult
 
     if(action.equals("dirChooser")) {
       cordova.getThreadPool().execute(new Runnable() {
@@ -57,18 +65,20 @@ public class FileExternal extends CordovaPlugin {
       result = true;
     }
     else if(action.equals("listDir")) {
-      final DocumentFile dirFile = getFile(args.getString(0), args.getString(1));
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
+            FileExternalEntry dirFile = getExternalEntry(rootUri, extPath);
             JSONArray resultJson = listDir(dirFile);
-            callback.success(resultJson);
+            callbackContext.success(resultJson);
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           } catch (JSONException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -76,15 +86,17 @@ public class FileExternal extends CordovaPlugin {
       result = true;
     }
     else if(action.equals("readFile")) {
-      final DocumentFile file = getFile(args.getString(0), args.getString(1));
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
+            FileExternalEntry file = getExternalEntry(rootUri, extPath);
             String content = readFile(file);
-            callback.success(content);
+            callbackContext.success(content);
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -92,15 +104,17 @@ public class FileExternal extends CordovaPlugin {
       result = true;
     }
     else if(action.equals("remove")) {
-      final DocumentFile entry = getFile(args.getString(0), args.getString(1));
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
+            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
             remove(entry);
-            callback.success();
+            callbackContext.success();
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -108,16 +122,18 @@ public class FileExternal extends CordovaPlugin {
       result = true;
     }
     else if(action.equals("createDir")) {
-      final DocumentFile entry = getFile(args.getString(0), args.getString(1));
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
       final String dirName = args.getString(2);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
+            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
             createDir(entry, dirName);
-            callback.success();
+            callbackContext.success();
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -125,17 +141,19 @@ public class FileExternal extends CordovaPlugin {
       result = true;
     }
     else if(action.equals("writeFile")) {
-      final DocumentFile target = getFile(args.getString(0), args.getString(1));
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
       final String fileName = args.getString(2);
       final String data = args.getString(3);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
-            writeFile(target, fileName, data);
-            callback.success();
+            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
+            writeFile(entry, fileName, data);
+            callbackContext.success();
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -144,15 +162,17 @@ public class FileExternal extends CordovaPlugin {
     }
     else if(action.equals("copyAssetsToExternal")) {
       final String assetPath = args.getString(0);
-      final DocumentFile extTarget = getFile(args.getString(1), args.getString(2));
+      final String rootUri = args.getString(1);
+      final String extPath = args.getString(2);
       cordova.getThreadPool().execute(new Runnable() {
         @Override
         public void run() {
           try {
+            FileExternalEntry extTarget = getExternalEntry(rootUri, extPath);
             copyAssetsToExternal(assetPath, extTarget);
-            callback.success();
+            callbackContext.success();
           } catch (IOException e) {
-            callback.error(e.getMessage());
+            callbackContext.error(e.getMessage());
             e.printStackTrace();
           }
         }
@@ -168,46 +188,62 @@ public class FileExternal extends CordovaPlugin {
     cordova.startActivityForResult(this, intent, ACTION_GET_FILES);
   }
 
-  private DocumentFile getFile(String path, String subDir) {
-    DocumentFile resultDir;
-    DocumentFile pathDir = DocumentFile.fromTreeUri(
-        cordova.getActivity().getApplicationContext(), Uri.parse(path));
-    resultDir = (subDir.equals(""))? pathDir: pathDir.findFile(subDir);
+  private FileExternalEntry getExternalEntry(String rootUri, String extPath) throws IOException {
+    FileExternalEntry resultEntry = new FileExternalEntry();
+    resultEntry.rootUri = rootUri;
+    resultEntry.extPath = extPath;
+    resultEntry.fileEntry = DocumentFile.fromTreeUri(
+        cordova.getActivity().getApplicationContext(), Uri.parse(rootUri));
 
-    return resultDir;
+    if(!extPath.equals("")){
+      String[] parts = extPath.split("/");
+      for(String part: parts) {
+        resultEntry.fileEntry = resultEntry.fileEntry.findFile(part);
+        if(resultEntry.fileEntry == null ){
+          Log.i(TAG, "entry does not exist");
+          throw new IOException("not found");
+        }
+      }
+    }
+
+    if(!resultEntry.fileEntry.exists()){
+      Log.i(TAG, "entry does not exist");
+      throw new IOException("not found");
+    }
+    return resultEntry;
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     if(requestCode == ACTION_GET_FILES
         && resultCode == Activity.RESULT_OK
-        && callback != null
+        && this._callbackContext != null
         && intent != null){
       Activity activity = cordova.getActivity();
       DocumentFile externalFile = DocumentFile.fromTreeUri(
           activity.getApplicationContext(), intent.getData());
       Log.i(TAG, "external directory to get files: " + externalFile.getUri());
 
-      callback.success(externalFile.getUri().toString());
+      this._callbackContext.success(externalFile.getUri().toString());
     }
   }
 
-  private JSONArray listDir(DocumentFile sourceDir) throws IOException, JSONException {
-    if(sourceDir == null || !sourceDir.exists()){
-      Log.i(TAG, "sourceDir does not exist");
-      throw new IOException("not found");
+  private JSONArray listDir(FileExternalEntry sourceDir) throws IOException, JSONException {
+    if(!sourceDir.fileEntry.isDirectory()) {
+      Log.i(TAG, "entry does not exist");
+      throw new IOException("not a directory");
     }
 
-    Log.i(TAG, "list files from  " + sourceDir.getName());
+    Log.i(TAG, "list files from  " + sourceDir.fileEntry.getName());
 
     JSONArray filesDataJson = new JSONArray();
 
-    for (DocumentFile sourceFile : sourceDir.listFiles()) {
+    for (DocumentFile sourceFile : sourceDir.fileEntry.listFiles()) {
       long lastModified = sourceFile.lastModified();
       Log.i(TAG, "lastMod " + sourceFile.getName() + " is " + lastModified);
 
       JSONObject jsonObject = new JSONObject();
-      jsonObject.put("path", sourceFile.getUri());
+      jsonObject.put("extPath", sourceDir.extPath);
       jsonObject.put("name", sourceFile.getName());
       jsonObject.put("isFile", sourceFile.isFile());
       jsonObject.put("modificationDate", lastModified);
@@ -217,19 +253,15 @@ public class FileExternal extends CordovaPlugin {
     return filesDataJson;
   }
 
-  private String readFile(DocumentFile file) throws IOException{
-    if(file == null || !file.exists()){
-      Log.i(TAG, "sourceDir does not exist");
-      throw new IOException("not found");
-    }
-    if(!file.isFile()){
+  private String readFile(FileExternalEntry file) throws IOException{
+    if(!file.fileEntry.isFile()){
       Log.i(TAG, "not a file");
       throw new IOException("not a file");
     }
-    Log.i(TAG, "read file: " + file.getName());
+    Log.i(TAG, "read file: " + file.fileEntry.getName());
 
     ContentResolver ctx = cordova.getActivity().getContentResolver();
-    InputStream is = ctx.openInputStream(file.getUri());
+    InputStream is = ctx.openInputStream(file.fileEntry.getUri());
 
     BufferedReader r = new BufferedReader(new InputStreamReader(is));
     StringBuilder content = new StringBuilder();
@@ -241,29 +273,24 @@ public class FileExternal extends CordovaPlugin {
     return content.toString();
   }
 
-  private void remove(DocumentFile entry) throws IOException{
-    if(entry == null || !entry.exists()){
-      Log.i(TAG, "entry does not exist");
-      throw new IOException("not found");
-    }
-
-    Log.i(TAG, "remove: " + entry.getUri());
-    entry.delete();
+  private void remove(FileExternalEntry entry) throws IOException{
+    Log.i(TAG, "remove: " + entry.fileEntry.getUri());
+    entry.fileEntry.delete();
   }
 
-  private void createDir(DocumentFile path, String dirName) throws IOException {
-    if(path == null || !path.exists()){
-      Log.i(TAG, "path does not exist");
-      throw new IOException("not found");
+  private void createDir(FileExternalEntry path, String dirName) throws IOException {
+    if(!path.fileEntry.isDirectory()) {
+      Log.i(TAG, "entry is not a directory");
+      throw new IOException("not a directory");
     }
 
-    path.createDirectory(dirName);
+    path.fileEntry.createDirectory(dirName);
   }
 
-  private void writeFile(DocumentFile target, String fileName, String data) throws IOException {
-    if(target == null || !target.exists()){
-      Log.i(TAG, "target dir does not exist");
-      throw new IOException("not found");
+  private void writeFile(FileExternalEntry target, String fileName, String data) throws IOException {
+    if(!target.fileEntry.isDirectory()) {
+      Log.i(TAG, "entry is not a directory");
+      throw new IOException("not a directory");
     }
 
     Log.i(TAG, "write file " + fileName);
@@ -271,25 +298,24 @@ public class FileExternal extends CordovaPlugin {
     InputStream is = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 
     ContentResolver ctx = cordova.getActivity().getContentResolver();
-    DocumentFile file = target.createFile(null, fileName);
+    DocumentFile file = target.fileEntry.createFile(null, fileName);
     OutputStream os = ctx.openOutputStream(file.getUri());
 
     FileExternal.copyInputToOutputStream(is, os);
   }
 
-  private void copyAssetsToExternal(String assetPath, DocumentFile target) throws IOException{
-    if(target == null || !target.exists()){
-      Log.i(TAG, "target does not exist");
-      throw new IOException("not found");
+  private void copyAssetsToExternal(String assetPath, FileExternalEntry target) throws IOException{
+    if(!target.fileEntry.isDirectory()) {
+      Log.i(TAG, "entry is not a directory");
+      throw new IOException("not a directory");
     }
 
-    Log.i(TAG, "copy assets in " + assetPath + " to " + target.getName());
+    Log.i(TAG, "copy assets in " + assetPath + " to " + target.fileEntry.getName());
 
     ContentResolver ctx = cordova.getActivity().getContentResolver();
     AssetManager asm = cordova.getActivity().getAssets();
 
-
-    FileExternal.copyAssets(ctx, asm, assetPath, target);
+    FileExternal.copyAssets(ctx, asm, assetPath, target.fileEntry);
   }
 
   private static void copyAssets(ContentResolver ctx, AssetManager asm, String assetPath, DocumentFile target) throws IOException {
