@@ -18,6 +18,11 @@ var FileExternal = {
       exec(resolve, reject, PLUGIN_NAME, 'readFile', [extRootUri, extFilePath]);
     });
   },
+  readFileBinary: function(extRootUri, extFilePath){
+    return new Promise(function(resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, 'readFileBinary', [extRootUri, extFilePath]);
+    });
+  },
   remove: function(extRootUri, extPath){
     return new Promise(function(resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, 'remove', [extRootUri, extPath]);

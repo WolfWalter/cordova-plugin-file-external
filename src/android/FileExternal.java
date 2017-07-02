@@ -21,14 +21,13 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-
-import static android.R.attr.path;
 
 class FileExternalEntry {
   public DocumentFile fileEntry;
@@ -94,6 +93,24 @@ public class FileExternal extends CordovaPlugin {
           try {
             FileExternalEntry file = getExternalEntry(rootUri, extPath);
             String content = readFile(file);
+            callbackContext.success(content);
+          } catch (IOException e) {
+            callbackContext.error(e.getMessage());
+            e.printStackTrace();
+          }
+        }
+      });
+      result = true;
+    }
+    else if(action.equals("readFileBinary")) {
+      final String rootUri = args.getString(0);
+      final String extPath = args.getString(1);
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            FileExternalEntry file = getExternalEntry(rootUri, extPath);
+            byte[] content = readFileBinary(file);
             callbackContext.success(content);
           } catch (IOException e) {
             callbackContext.error(e.getMessage());
@@ -241,9 +258,10 @@ public class FileExternal extends CordovaPlugin {
     for (DocumentFile sourceFile : sourceDir.fileEntry.listFiles()) {
       long lastModified = sourceFile.lastModified();
       Log.i(TAG, "lastMod " + sourceFile.getName() + " is " + lastModified);
+      String extPath = (sourceDir.extPath.equals(""))? sourceFile.getName(): sourceDir.extPath + "/" + sourceFile.getName();
 
       JSONObject jsonObject = new JSONObject();
-      jsonObject.put("extPath", sourceDir.extPath);
+      jsonObject.put("extPath", extPath);
       jsonObject.put("name", sourceFile.getName());
       jsonObject.put("isFile", sourceFile.isFile());
       jsonObject.put("modificationDate", lastModified);
@@ -271,6 +289,26 @@ public class FileExternal extends CordovaPlugin {
     }
 
     return content.toString();
+  }
+
+  private byte[] readFileBinary(FileExternalEntry file) throws IOException{
+    if(!file.fileEntry.isFile()){
+      Log.i(TAG, "not a file");
+      throw new IOException("not a file");
+    }
+    Log.i(TAG, "read file: " + file.fileEntry.getName());
+
+    ContentResolver ctx = cordova.getActivity().getContentResolver();
+    InputStream is = ctx.openInputStream(file.fileEntry.getUri());
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream(); 
+    byte[] buffer = new byte[1024*32];
+    int bytesRead;
+
+    while ((bytesRead = is.read(buffer)) != -1) {
+      output.write(buffer, 0, bytesRead);
+    }
+    return output.toByteArray();
   }
 
   private void remove(FileExternalEntry entry) throws IOException{
