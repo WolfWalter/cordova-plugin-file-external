@@ -311,7 +311,6 @@ public class FileExternal extends CordovaPlugin {
       os.write(buffer, 0, bytesRead);
     }
 
-    os.flush();
     is.close();
     os.close();
 
@@ -399,7 +398,6 @@ public class FileExternal extends CordovaPlugin {
       os.write(buffer, 0, bytesRead);
     }
 
-    os.flush();
     is.close();
     os.close();
   }
