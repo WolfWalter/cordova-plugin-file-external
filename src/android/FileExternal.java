@@ -288,6 +288,8 @@ public class FileExternal extends CordovaPlugin {
       content.append(line).append('\n');
     }
 
+    is.close();
+
     return content.toString();
   }
 
@@ -301,14 +303,19 @@ public class FileExternal extends CordovaPlugin {
     ContentResolver ctx = cordova.getActivity().getContentResolver();
     InputStream is = ctx.openInputStream(file.fileEntry.getUri());
 
-    ByteArrayOutputStream output = new ByteArrayOutputStream(); 
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
     byte[] buffer = new byte[1024*32];
     int bytesRead;
 
     while ((bytesRead = is.read(buffer)) != -1) {
-      output.write(buffer, 0, bytesRead);
+      os.write(buffer, 0, bytesRead);
     }
-    return output.toByteArray();
+
+    os.flush();
+    is.close();
+    os.close();
+
+    return os.toByteArray();
   }
 
   private void remove(FileExternalEntry entry) throws IOException{
