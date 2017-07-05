@@ -257,12 +257,12 @@ public class FileExternal extends CordovaPlugin {
 
     for (DocumentFile sourceFile : sourceDir.fileEntry.listFiles()) {
       long lastModified = sourceFile.lastModified();
-      Log.i(TAG, "lastMod " + sourceFile.getName() + " is " + lastModified);
-      String extPath = (sourceDir.extPath.equals(""))? sourceFile.getName(): sourceDir.extPath + "/" + sourceFile.getName();
+      String sourceFileName = sourceFile.getName();
+      String extPath = (sourceDir.extPath.equals(""))? sourceFileName: sourceDir.extPath + "/" + sourceFileName;
 
       JSONObject jsonObject = new JSONObject();
       jsonObject.put("extPath", extPath);
-      jsonObject.put("name", sourceFile.getName());
+      jsonObject.put("name", sourceFileName);
       jsonObject.put("isFile", sourceFile.isFile());
       jsonObject.put("modificationDate", lastModified);
       filesDataJson.put(jsonObject);
