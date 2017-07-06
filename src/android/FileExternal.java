@@ -74,9 +74,8 @@ public class FileExternal extends CordovaPlugin {
   }
 
   public boolean execute(String action, final String rawArgs, final CallbackContext callbackContext) {
-    _callbackContext = callbackContext; // only used for onActivityResult
-
     if(action.equals("dirChooser")) {
+      _callbackContext = callbackContext; // only used for onActivityResult
       threadhelper(new FileOp() {
         public void run(JSONArray args) {
           openDirChooser();
