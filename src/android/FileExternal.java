@@ -1,5 +1,21 @@
-/**
- */
+/*
+       Licensed to the Apache Software Foundation (ASF) under one
+       or more contributor license agreements.  See the NOTICE file
+       distributed with this work for additional information
+       regarding copyright ownership.  The ASF licenses this file
+       to you under the Apache License, Version 2.0 (the
+       "License"); you may not use this file except in compliance
+       with the License.  You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+       Unless required by applicable law or agreed to in writing,
+       software distributed under the License is distributed on an
+       "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+       KIND, either express or implied.  See the License for the
+       specific language governing permissions and limitations
+       under the License.
+*/
 package de.solvis;
 
 import android.app.Activity;
@@ -23,6 +39,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,167 +54,147 @@ class FileExternalEntry {
 
 public class FileExternal extends CordovaPlugin {
   private static final String TAG = "FileExternal";
-  private static final int ACTION_GET_FILES = 56;
+  private static final int ACTION_GET_FILES = 0;
   private CallbackContext _callbackContext;
 
+  public static int NOT_FOUND_ERR = 1;
+  public static int SECURITY_ERR = 2;
+  public static int INVALID_STATE_ERR = 7;
+  public static int INVALID_MODIFICATION_ERR = 9;
+  public static int UNKNOWN_ERR = 1000;
+
+
+  private interface FileOp {
+    void run(JSONArray args) throws Exception;
+  }
+  
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
-
     Log.d(TAG, "Initializing FileExternal");
   }
 
-  public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
-    boolean result = false;
-
-    PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
-    pluginResult.setKeepCallback(true);
-    callbackContext.sendPluginResult(pluginResult);
+  public boolean execute(String action, final String rawArgs, final CallbackContext callbackContext) {
     _callbackContext = callbackContext; // only used for onActivityResult
 
     if(action.equals("dirChooser")) {
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) {
           openDirChooser();
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("listDir")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry dirFile = getExternalEntry(rootUri, extPath);
-            JSONArray resultJson = listDir(dirFile);
-            callbackContext.success(resultJson);
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          } catch (JSONException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, FileNotFoundException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          FileExternalEntry dirFile = getExternalEntry(rootUri, extPath);
+          JSONArray resultJson = listDir(dirFile);
+          callbackContext.success(resultJson);
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("readFile")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry file = getExternalEntry(rootUri, extPath);
-            String content = readFile(file);
-            callbackContext.success(content);
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, IOException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          FileExternalEntry file = getExternalEntry(rootUri, extPath);
+          String content = readFile(file);
+          callbackContext.success(content);
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("readFileBinary")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry file = getExternalEntry(rootUri, extPath);
-            byte[] content = readFileBinary(file);
-            callbackContext.success(content);
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, IOException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          FileExternalEntry file = getExternalEntry(rootUri, extPath);
+          byte[] content = readFileBinary(file);
+          callbackContext.success(content);
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("remove")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
-            remove(entry);
-            callbackContext.success();
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, IOException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          FileExternalEntry entry = getExternalEntry(rootUri, extPath);
+
+          remove(entry);
+          callbackContext.success();
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("createDir")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      final String dirName = args.getString(2);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
-            createDir(entry, dirName);
-            callbackContext.success();
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, FileNotFoundException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          String dirName = args.getString(2);
+          FileExternalEntry entry = getExternalEntry(rootUri, extPath);
+          createDir(entry, dirName);
+          callbackContext.success();
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("writeFile")) {
-      final String rootUri = args.getString(0);
-      final String extPath = args.getString(1);
-      final String fileName = args.getString(2);
-      final String data = args.getString(3);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry entry = getExternalEntry(rootUri, extPath);
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, IOException{
+          String rootUri = args.getString(0);
+          String extPath = args.getString(1);
+          String fileName = args.getString(2);
+          String data = args.getString(3);
+          FileExternalEntry entry = getExternalEntry(rootUri, extPath);
             writeFile(entry, fileName, data);
             callbackContext.success();
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
     }
     else if(action.equals("copyAssetsToExternal")) {
-      final String assetPath = args.getString(0);
-      final String rootUri = args.getString(1);
-      final String extPath = args.getString(2);
-      cordova.getThreadPool().execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            FileExternalEntry extTarget = getExternalEntry(rootUri, extPath);
-            copyAssetsToExternal(assetPath, extTarget);
-            callbackContext.success();
-          } catch (IOException e) {
-            callbackContext.error(e.getMessage());
-            e.printStackTrace();
-          }
+      threadhelper(new FileOp() {
+        public void run(JSONArray args) throws JSONException, IOException{
+          String assetPath = args.getString(0);
+          String rootUri = args.getString(1);
+          String extPath = args.getString(2);
+          FileExternalEntry extTarget = getExternalEntry(rootUri, extPath);
+
+          copyAssetsToExternal(assetPath, extTarget);
+          callbackContext.success();
         }
-      });
-      result = true;
+      }, rawArgs, callbackContext);
+    }
+    else{
+      return false;
     }
 
-    return result;
+    return true;
+  }
+
+  private void threadhelper(final FileOp f, final String rawArgs, final CallbackContext callbackContext){
+    cordova.getThreadPool().execute(new Runnable() {
+      public void run() {
+        try {
+          JSONArray args = new JSONArray(rawArgs);
+          f.run(args);
+        } catch ( Exception e) {
+          if( e instanceof FileNotFoundException) {
+            callbackContext.error(FileExternal.NOT_FOUND_ERR);
+          } else if(e instanceof IOException ) {
+            callbackContext.error(FileExternal.INVALID_MODIFICATION_ERR);
+          } else if(e instanceof JSONException ) {
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.JSON_EXCEPTION));
+          } else if (e instanceof SecurityException) {
+            callbackContext.error(FileExternal.SECURITY_ERR);
+          } else {
+            e.printStackTrace();
+            callbackContext.error(FileExternal.UNKNOWN_ERR);
+          }
+        }
+      }
+    });
   }
 
   private void openDirChooser() {
@@ -205,7 +202,7 @@ public class FileExternal extends CordovaPlugin {
     cordova.startActivityForResult(this, intent, ACTION_GET_FILES);
   }
 
-  private FileExternalEntry getExternalEntry(String rootUri, String extPath) throws IOException {
+  private FileExternalEntry getExternalEntry(String rootUri, String extPath) throws FileNotFoundException {
     FileExternalEntry resultEntry = new FileExternalEntry();
     resultEntry.rootUri = rootUri;
     resultEntry.extPath = extPath;
@@ -218,14 +215,14 @@ public class FileExternal extends CordovaPlugin {
         resultEntry.fileEntry = resultEntry.fileEntry.findFile(part);
         if(resultEntry.fileEntry == null ){
           Log.i(TAG, "entry does not exist");
-          throw new IOException("not found");
+          throw new FileNotFoundException();
         }
       }
     }
 
     if(!resultEntry.fileEntry.exists()){
       Log.i(TAG, "entry does not exist");
-      throw new IOException("not found");
+      throw new FileNotFoundException();
     }
     return resultEntry;
   }
@@ -245,10 +242,10 @@ public class FileExternal extends CordovaPlugin {
     }
   }
 
-  private JSONArray listDir(FileExternalEntry sourceDir) throws IOException, JSONException {
+  private JSONArray listDir(FileExternalEntry sourceDir) throws FileNotFoundException, JSONException {
     if(!sourceDir.fileEntry.isDirectory()) {
       Log.i(TAG, "entry does not exist");
-      throw new IOException("not a directory");
+      throw new FileNotFoundException();
     }
 
     Log.i(TAG, "list files from  " + sourceDir.fileEntry.getName());
@@ -274,7 +271,7 @@ public class FileExternal extends CordovaPlugin {
   private String readFile(FileExternalEntry file) throws IOException{
     if(!file.fileEntry.isFile()){
       Log.i(TAG, "not a file");
-      throw new IOException("not a file");
+      throw new FileNotFoundException();
     }
     Log.i(TAG, "read file: " + file.fileEntry.getName());
 
@@ -296,7 +293,7 @@ public class FileExternal extends CordovaPlugin {
   private byte[] readFileBinary(FileExternalEntry file) throws IOException{
     if(!file.fileEntry.isFile()){
       Log.i(TAG, "not a file");
-      throw new IOException("not a file");
+      throw new FileNotFoundException();
     }
     Log.i(TAG, "read file: " + file.fileEntry.getName());
 
@@ -319,13 +316,17 @@ public class FileExternal extends CordovaPlugin {
 
   private void remove(FileExternalEntry entry) throws IOException{
     Log.i(TAG, "remove: " + entry.fileEntry.getUri());
-    entry.fileEntry.delete();
+
+    if(!entry.fileEntry.delete()){
+      Log.i(TAG, "could not delete");
+      throw new IOException();
+    }
   }
 
-  private void createDir(FileExternalEntry path, String dirName) throws IOException {
+  private void createDir(FileExternalEntry path, String dirName) throws FileNotFoundException {
     if(!path.fileEntry.isDirectory()) {
       Log.i(TAG, "entry is not a directory");
-      throw new IOException("not a directory");
+      throw new FileNotFoundException();
     }
 
     path.fileEntry.createDirectory(dirName);
@@ -334,7 +335,7 @@ public class FileExternal extends CordovaPlugin {
   private void writeFile(FileExternalEntry target, String fileName, String data) throws IOException {
     if(!target.fileEntry.isDirectory()) {
       Log.i(TAG, "entry is not a directory");
-      throw new IOException("not a directory");
+      throw new FileNotFoundException();
     }
 
     Log.i(TAG, "write file " + fileName);

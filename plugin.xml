@@ -7,9 +7,9 @@
     <description></description>
     <license>Apache 2.0</license>
     <keywords></keywords>
+    <dependency id="es6-promise-plugin" url="https://github.com/vstirbu/PromisesPlugin.git"></dependency>
 
     <platform name="android">
-
       <js-module src="www/FileExternal.js" name="FileExternal">
         <clobbers target="window.FileExternal" />
       </js-module>
@@ -21,11 +21,12 @@
         </feature>
       </config-file>
 
+      <config-file target="AndroidManifest.xml" parent="/*">
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+      </config-file>
+
       <source-file src="src/android/FileExternal.java" target-dir="src/de/solvis/" />
 
-      <dependency id="es6-promise-plugin" url="https://github.com/vstirbu/PromisesPlugin.git"></dependency>
     </platform>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
 </plugin>
