@@ -279,9 +279,10 @@ public class FileExternal extends CordovaPlugin {
 
     BufferedReader r = new BufferedReader(new InputStreamReader(is));
     StringBuilder content = new StringBuilder();
-    String line;
-    while ((line = r.readLine()) != null) {
-      content.append(line).append('\n');
+    int value;
+    while ((value = r.read()) != -1) {
+      char c = (char)value;
+      content.append(c);
     }
 
     is.close();
