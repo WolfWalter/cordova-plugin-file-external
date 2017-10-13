@@ -46,6 +46,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+import static android.R.attr.path;
+
 class FileExternalEntry {
   public DocumentFile fileEntry;
   public String rootUri;
@@ -67,7 +69,7 @@ public class FileExternal extends CordovaPlugin {
   private interface FileOp {
     void run(JSONArray args) throws Exception;
   }
-  
+
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
     Log.d(TAG, "Initializing FileExternal");
@@ -329,7 +331,11 @@ public class FileExternal extends CordovaPlugin {
       throw new FileNotFoundException();
     }
 
-    path.fileEntry.createDirectory(dirName);
+    DocumentFile dir = path.fileEntry.findFile(dirName);
+
+    if(dir == null) {
+      path.fileEntry.createDirectory(dirName);
+    }
   }
 
   private void writeFile(FileExternalEntry target, String fileName, String data) throws IOException {
@@ -371,7 +377,11 @@ public class FileExternal extends CordovaPlugin {
     }
     else{
       String dirName = new File(assetPath).getName();
-      DocumentFile subDir = target.createDirectory(dirName);
+
+      DocumentFile subDir = target.findFile(dirName);
+      if(subDir == null) {
+        subDir = target.createDirectory(dirName);
+      }
 
       for (String asset : assets) {
         FileExternal.copyAssets(ctx, asm, assetPath + "/" + asset, subDir);
@@ -383,7 +393,13 @@ public class FileExternal extends CordovaPlugin {
     String fileName = new File(assetPath).getName();
     InputStream is = asm.open(assetPath);
 
-    DocumentFile targetFile = target.createFile(null, fileName);
+    DocumentFile targetFile = target.findFile(fileName);
+    if(targetFile != null) {
+      targetFile.delete();
+    }
+
+    targetFile = target.createFile(null, fileName);
+
     OutputStream os = ctx.openOutputStream(targetFile.getUri());
 
     Log.i(TAG, "copy assets file " + assetPath + " to " + target.getUri().toString());
