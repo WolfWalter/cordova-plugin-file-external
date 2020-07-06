@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-    id="cordova-plugin-file-external"
-    version="1.0.0">
-    <name>FileExternal</name>
-    <description></description>
-    <license>Apache 2.0</license>
-    <keywords></keywords>
-    <dependency id="es6-promise-plugin" version="4.1.0" />
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-file-external" version="1.0.0">
+  <name>FileExternal</name>
+  <description></description>
+  <license>Apache 2.0</license>
+  <keywords></keywords>
+  <dependency id="es6-promise-plugin" version="4.1.0" />
 
-    <platform name="android">
-      <js-module src="www/FileExternal.js" name="FileExternal">
-        <clobbers target="window.FileExternal" />
-      </js-module>
+  <platform name="android">
+    <js-module src="www/FileExternal.js" name="FileExternal">
+      <clobbers target="window.FileExternal" />
+    </js-module>
 
-      <config-file target="res/xml/config.xml" parent="/*">
-        <feature name="FileExternal">
-          <param name="android-package" value="de.solvis.FileExternal" />
-          <param name="onload" value="true" />
-        </feature>
-      </config-file>
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="FileExternal">
+        <param name="android-package" value="de.solvis.FileExternal" />
+        <param name="onload" value="true" />
+      </feature>
+    </config-file>
 
-      <config-file target="AndroidManifest.xml" parent="/*">
-        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-      </config-file>
+    <config-file target="AndroidManifest.xml" parent="/*">
+      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    </config-file>
 
-      <source-file src="src/android/FileExternal.java" target-dir="src/de/solvis/" />
+    <source-file src="src/android/FileExternal.java" target-dir="src/de/solvis/" />
 
-    </platform>
+    <framework src="androidx.documentfile:documentfile:+" />
+
+  </platform>
 
 </plugin>

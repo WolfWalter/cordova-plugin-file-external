@@ -23,8 +23,9 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.net.Uri;
-import android.support.v4.provider.DocumentFile;
 import android.util.Log;
+
+import androidx.documentfile.provider.DocumentFile;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
