@@ -1,12 +1,12 @@
 {
   "name": "cordova-plugin-file-external",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "cordova": {
     "id": "cordova-plugin-file-external",
     "platforms": [
       "android"
     ]
   },
-  "description": "Plugin to work with external files like on an external sd-card conneted over USB-OTG.",
+  "description": "Plugin to work with external files like on an external sd-card connected over USB-OTG.",
   "types": "./types/index.d.ts"
 }

@@ -5,7 +5,7 @@
   <description></description>
   <license>Apache 2.0</license>
   <keywords></keywords>
-  <dependency id="es6-promise-plugin" version="4.1.0" />
+  <dependency id="es6-promise-plugin" version="4.2.2" />
 
   <platform name="android">
     <js-module src="www/FileExternal.js" name="FileExternal">
@@ -25,7 +25,7 @@
 
     <source-file src="src/android/FileExternal.java" target-dir="src/de/solvis/" />
 
-    <framework src="androidx.documentfile:documentfile:+" />
+    <framework src="androidx.documentfile:documentfile:1.0.1" />
 
   </platform>
 
